@@ -1,22 +1,14 @@
 import { auth, signOut } from "@/app/(auth)/auth";
 import Link from "next/link";
-import { History } from "./history";
 
 export const Navbar = async () => {
   let session = await auth();
 
   return (
-    <div className="bg-white absolute top-0 left-0 w-dvw border-b dark:border-zinc-800 py-2 px-3 justify-between flex flex-row items-center dark:bg-zinc-900 z-30">
-      <div className="flex flex-row gap-3 items-center">
-        <History />
-        <div className="text-sm dark:text-zinc-300">
-          Internal Knowledge Base
-        </div>
-      </div>
-
+    <div className="fixed top-0 right-0 bg-white border-b border-gray-200 py-3 px-4 flex justify-end items-center z-30 ml-56 w-[calc(100%-14rem)]">
       {session ? (
-        <div className="group py-1 px-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer relative">
-          <div className="text-sm dark:text-zinc-400 z-10">
+        <div className="group py-1 px-2 rounded-md hover:bg-zinc-100 cursor-pointer relative">
+          <div className="text-sm z-10">
             {session.user?.email}
           </div>
           <div className="flex-col absolute top-6 right-0 w-full pt-5 group-hover:flex hidden">
@@ -38,7 +30,7 @@ export const Navbar = async () => {
       ) : (
         <Link
           href="login"
-          className="text-sm p-1 px-2 bg-zinc-900 rounded-md text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="text-sm p-1 px-2 bg-purple rounded-md text-white hover:bg-deep-purple transition-colors"
         >
           Login
         </Link>

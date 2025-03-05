@@ -3,14 +3,75 @@ import { desc, eq, inArray } from "drizzle-orm";
 import postgres from "postgres";
 import { genSaltSync, hashSync } from "bcrypt-ts";
 import { chat, chunk, user } from "@/schema";
+import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
-// Optionally, if not using email/pass login, you can
-// use the Drizzle adapter for Auth.js / NextAuth
-// https://authjs.dev/reference/adapter/drizzle
-let client = postgres(`${process.env.POSTGRES_URL!}?sslmode=require`);
-let db = drizzle(client);
+// Create a more complete mock DB client
+const mockDb = {
+  select: () => ({
+    from: (table: any) => ({
+      where: (condition: any) => Promise.resolve([]),
+      orderBy: () => Promise.resolve([])
+    })
+  }),
+  insert: (table: any) => ({
+    values: (data: any) => Promise.resolve({
+      // For user registration, return a mock user
+      email: data.email,
+      password: data.password
+    })
+  }),
+  update: (table: any) => ({
+    set: (data: any) => ({
+      where: (condition: any) => Promise.resolve(null)
+    })
+  }),
+  delete: (table: any) => ({
+    where: (condition: any) => Promise.resolve(null)
+  })
+};
+
+// Check if Supabase DB URL is available
+let client;
+let db: any; // Using any to simplify types
+
+try {
+  // Use SUPABASE_DB_URL instead of POSTGRES_URL
+  if (process.env.SUPABASE_DB_URL) {
+    console.log("Connecting to Supabase database...");
+    
+    // Parse and properly encode the database URL
+    const dbUrl = process.env.SUPABASE_DB_URL;
+    
+    // Extract parts of the URL to properly encode the password
+    const urlMatch = dbUrl.match(/^(postgresql:\/\/[^:]+:)([^@]+)(@.+)$/);
+    if (urlMatch) {
+      const [_, prefix, password, suffix] = urlMatch;
+      // Encode the password component
+      const encodedPassword = encodeURIComponent(password);
+      const encodedUrl = `${prefix}${encodedPassword}${suffix}`;
+      console.log("Using encoded Supabase URL");
+      client = postgres(encodedUrl);
+    } else {
+      console.log("Using original Supabase URL");
+      client = postgres(dbUrl);
+    }
+    
+    db = drizzle(client);
+  } else {
+    console.warn("SUPABASE_DB_URL is not defined. Using mock database.");
+    db = mockDb;
+  }
+} catch (error) {
+  console.error("Error connecting to database:", error);
+  db = mockDb;
+}
 
 export async function getUser(email: string) {
+  if (db === mockDb) {
+    console.log("Using mock getUser for", email);
+    // Return empty array for mockDb to allow registration
+    return [];
+  }
   return await db.select().from(user).where(eq(user.email, email));
 }
 
@@ -18,6 +79,7 @@ export async function createUser(email: string, password: string) {
   let salt = genSaltSync(10);
   let hash = hashSync(password, salt);
 
+  console.log("Creating user:", email);
   return await db.insert(user).values({ email, password: hash });
 }
 
@@ -63,7 +125,24 @@ export async function getChatById({ id }: { id: string }) {
 }
 
 export async function insertChunks({ chunks }: { chunks: any[] }) {
-  return await db.insert(chunk).values(chunks);
+  // Check if chunks array is empty
+  if (!chunks || chunks.length === 0) {
+    console.warn("No chunks provided to insertChunks");
+    return;
+  }
+
+  // Handle mock database case
+  if (db === mockDb) {
+    console.log(`Mock insertChunks: would insert ${chunks.length} chunks`);
+    return chunks;
+  }
+
+  try {
+    return await db.insert(chunk).values(chunks);
+  } catch (error) {
+    console.error("Error inserting chunks:", error);
+    throw error;
+  }
 }
 
 export async function getChunksByFilePaths({

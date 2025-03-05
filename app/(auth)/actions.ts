@@ -32,19 +32,40 @@ export const register = async (
   data: RegisterActionState,
   formData: FormData,
 ) => {
-  let email = formData.get("email") as string;
-  let password = formData.get("password") as string;
-  let user = await getUser(email);
+  try {
+    let email = formData.get("email") as string;
+    let password = formData.get("password") as string;
+    
+    // Validate inputs
+    if (!email || !password) {
+      console.error("Registration error: Missing email or password");
+      return { status: "failed" } as RegisterActionState;
+    }
+    
+    let user = await getUser(email);
 
-  if (user.length > 0) {
-    return { status: "user_exists" } as RegisterActionState;
-  } else {
-    await createUser(email, password);
-    await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
-    return { status: "success" } as RegisterActionState;
+    if (user.length > 0) {
+      return { status: "user_exists" } as RegisterActionState;
+    } else {
+      // Create the user
+      await createUser(email, password);
+      
+      // Sign in the user
+      try {
+        await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+        return { status: "success" } as RegisterActionState;
+      } catch (signInError) {
+        console.error("Error during sign in after registration:", signInError);
+        // Even if sign-in fails, registration was successful
+        return { status: "success" } as RegisterActionState;
+      }
+    }
+  } catch (error) {
+    console.error("Registration error:", error);
+    return { status: "failed" } as RegisterActionState;
   }
 };

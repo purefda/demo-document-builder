@@ -1,3 +1,4 @@
+import { LeftNav } from "@/components/left-nav";
 import { Navbar } from "@/components/navbar";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
@@ -7,9 +8,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     "https://ai-sdk-preview-internal-knowledge-base.vercel.app",
   ),
-  title: "Internal Knowledge Base",
+  title: "Pure Global Document Builder",
   description:
-    "Internal Knowledge Base using Retrieval Augmented Generation and Middleware",
+    "Extract and analyze document information with AI-powered document processing",
 };
 
 export default function RootLayout({
@@ -19,10 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="bg-light-white">
         <Toaster position="top-center" />
+        <LeftNav />
         <Navbar />
-        {children}
+        <main className="ml-56 pt-16 min-h-screen">
+          {children}
+        </main>
       </body>
     </html>
   );
