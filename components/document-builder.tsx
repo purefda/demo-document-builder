@@ -4,9 +4,10 @@ import { useState, useRef, useEffect } from "react";
 import { InfoIcon, LoaderIcon, TrashIcon, UploadIcon, PencilEditIcon } from "./icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { FieldPrompt } from "@/utils/field-prompt-service";
 
 // Example medical device fields for extraction based on the PRD
-const DEFAULT_FIELDS = [
+const DEFAULT_FIELDS: FieldPrompt[] = [
   { key: "MANUFACTURER_NAME", prompt: "Provide the manufacturer name" },
   { key: "DEVICE_NAME", prompt: "Provide the full name of the medical device" },
   { key: "MODEL_NUMBER", prompt: "Extract the model number of the device" },
@@ -26,9 +27,17 @@ export interface FileMetadata {
   uploadedAt: Date;
 }
 
+interface FieldPromptConfig {
+  id: string;
+  name: string;
+  fields: FieldPrompt[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 export function DocumentBuilder() {
   const router = useRouter();
-  const [fields, setFields] = useState(DEFAULT_FIELDS);
+  const [fields, setFields] = useState<FieldPrompt[]>(DEFAULT_FIELDS);
   const [extractedInfo, setExtractedInfo] = useState<{ [key: string]: { value: string; reviewed: boolean } }>({});
   const [extractingField, setExtractingField] = useState<string | null>(null);
   const [extractingAll, setExtractingAll] = useState(false);
@@ -37,6 +46,8 @@ export function DocumentBuilder() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingDocuments, setProcessingDocuments] = useState<{ [key: string]: boolean }>({});
+  const [availableConfigs, setAvailableConfigs] = useState<FieldPromptConfig[]>([]);
+  const [selectedConfig, setSelectedConfig] = useState<string>("");
 
   // Fetch user's files on component mount
   useEffect(() => {
@@ -57,10 +68,53 @@ export function DocumentBuilder() {
     };
 
     fetchFiles();
+    loadFieldConfigs();
   }, []);
 
+  // Load field configurations from API
+  const loadFieldConfigs = async () => {
+    try {
+      const response = await fetch('/api/field-prompts');
+      
+      if (!response.ok) {
+        if (response.status !== 401) { // Ignore auth errors to allow document builder to work without login
+          console.error(`Failed to fetch field-prompt configs: ${response.status}`);
+        }
+        return;
+      }
+      
+      const configs = await response.json();
+      setAvailableConfigs(configs);
+    } catch (err) {
+      console.error('Error loading field configurations:', err);
+    }
+  };
+
+  // Function to load a selected field configuration
+  const handleLoadConfig = async (configId: string) => {
+    setSelectedConfig(configId);
+    
+    try {
+      const response = await fetch(`/api/field-prompts/${configId}`);
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch field-prompt config: ${response.status}`);
+        return;
+      }
+      
+      const config = await response.json();
+      if (config && config.fields) {
+        setFields(config.fields);
+        // Reset extracted info when changing configuration
+        setExtractedInfo({});
+      }
+    } catch (err) {
+      console.error(`Error loading field configuration ${configId}:`, err);
+    }
+  };
+
   const handleAddField = () => {
-    setFields([...fields, { key: `FIELD_${fields.length + 1}`, prompt: "" }]);
+    setFields([...fields, { key: "", prompt: "" }]);
   };
 
   const handleUpdateField = (index: number, key: string, value: string) => {
@@ -70,121 +124,71 @@ export function DocumentBuilder() {
   };
 
   const handleDeleteField = (index: number) => {
-    if (fields.length > 1) {
-      const newFields = [...fields];
-      newFields.splice(index, 1);
-      setFields(newFields);
-    }
+    const newFields = fields.filter((_, i) => i !== index);
+    setFields(newFields);
   };
 
   const toggleFileSelection = (pathname: string) => {
     setSelectedFiles(prev => 
-      prev.includes(pathname) 
-        ? prev.filter(p => p !== pathname) 
+      prev.includes(pathname)
+        ? prev.filter(p => p !== pathname)
         : [...prev, pathname]
     );
   };
 
   const handleExtract = async (fieldKey: string) => {
     if (selectedFiles.length === 0) {
-      setError("Please select at least one document first");
+      alert('Please select at least one document to extract information from.');
       return;
     }
-    
+
     setExtractingField(fieldKey);
-    setError(null);
-    
-    // Reset document processing states
-    const initialProcessingState: { [key: string]: boolean } = {};
-    selectedFiles.forEach(f => initialProcessingState[f] = false);
-    setProcessingDocuments(initialProcessingState);
     
     try {
-      // Find the field with matching key
-      const field = fields.find(f => f.key === fieldKey);
-      if (!field) {
-        throw new Error(`Field ${fieldKey} not found`);
+      const fieldToExtract = fields.find(f => f.key === fieldKey);
+      if (!fieldToExtract) {
+        throw new Error(`Field with key ${fieldKey} not found`);
       }
 
-      // Get selected files info with pathname property
-      const selectedFilesInfo = userFiles
-        .filter(file => selectedFiles.includes(file.pathname))
-        .map(file => ({ 
-          name: file.pathname, 
-          url: file.url,
-          pathname: file.pathname 
-        }));
-      
-      // Fetch the content of each selected document
-      const documentsWithContent = await Promise.all(
-        selectedFilesInfo.map(async (file, index) => {
-          try {
-            // Mark this document as being processed
-            setProcessingDocuments(prev => ({ ...prev, [file.pathname]: true }));
-            
-            // Fetch the document content using the file pathname to get the redirect first
-            const redirectResponse = await fetch(`/api/files/get?pathname=${encodeURIComponent(file.pathname)}`);
-            
-            if (!redirectResponse.ok) {
-              throw new Error(`Failed to access ${file.name}`);
-            }
-            
-            // Get the actual file URL from the redirect
-            const fileUrl = redirectResponse.url;
-            
-            // Use our server-side API to extract the content
-            const contentResponse = await fetch(`/api/files/content?url=${encodeURIComponent(fileUrl)}`);
-            
-            if (!contentResponse.ok) {
-              throw new Error(`Failed to extract content from ${file.name}`);
-            }
-            
-            const data = await contentResponse.json();
-            
-            // Mark document as processed
-            setProcessingDocuments(prev => ({ ...prev, [file.pathname]: false }));
-            
-            return {
-              ...file,
-              content: data.content || `[No content extracted from ${file.name}]`
-            };
-          } catch (error) {
-            // Mark document as processed (with error)
-            setProcessingDocuments(prev => ({ ...prev, [file.pathname]: false }));
-            console.error(`Error fetching content for ${file.name}:`, error);
-            return {
-              ...file,
-              content: `[Failed to load content for ${file.name}]`
-            };
-          }
-        })
-      );
-      
-      // Construct document content text to send to the API
-      // Limit each document content to a reasonable size to avoid token limits
-      const documentContents = documentsWithContent.map(doc => {
-        // Truncate content if it's too long (about 10,000 characters per document)
-        const maxContentLength = 100000000;
-        const truncatedContent = doc.content.length > maxContentLength 
-          ? doc.content.substring(0, maxContentLength) + "... [Content truncated due to length]"
-          : doc.content;
-        
-        return `Document: ${doc.name}\n\n${truncatedContent}\n\n`;
-      }).join('---\n\n');
+      // Get document content for each selected file
+      const documents = [];
+      for (const filePath of selectedFiles) {
+        setProcessingDocuments(prev => ({ ...prev, [filePath]: true }));
+        try {
+          // Get the file from userFiles array
+          const file = userFiles.find(f => f.pathname === filePath);
+          if (!file) continue;
 
-      // Construct the system prompt and user prompt
-      const systemPrompt = "You are an AI assistant that extracts specific information from medical device documentation. Extract the exact information requested, using only the provided documents. If the information is not found, say 'Information not found'. Don't replay irrelvant information like \"here is the information I found for you\" or \"here is the information I extracted for you\" or anything like that, just reply with the information requested.";
-      
-      // Call the query API
+          // Get the document content
+          const contentResponse = await fetch(`/api/files/content?url=${encodeURIComponent(file.url)}`);
+          if (!contentResponse.ok) {
+            throw new Error(`Failed to get content for ${filePath}`);
+          }
+
+          const content = await contentResponse.text();
+          documents.push(content);
+        } finally {
+          setProcessingDocuments(prev => ({ ...prev, [filePath]: false }));
+        }
+      }
+
+      const systemPrompt = `You are a specialized extraction assistant trained specifically to retrieve precise and relevant information from medical device documentation.
+    Extract ONLY the requested information based strictly on the provided prompt and field key. 
+    If the document does not explicitly contain the requested information, state clearly that it is not available. 
+    Do not include assumptions, additional context, or irrelevant details.
+    Do not reply with "ok here is the information" or anything like that, just reply with the information.
+    `
+      // Call the API to extract the information
       const response = await fetch('/api/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          systemPrompt,
-          userPrompt: `find the information for the field: ${field.key}. With the prompt: ${field.prompt}\n\nHere are the documents to extract from:\n\n${documentContents}`,
-          // Using default model from the PRD (set in the API)
+          systemPrompt: systemPrompt,
+          userPrompt: `key is ${fieldToExtract.key}, and the prompt is ${fieldToExtract.prompt}\n\nDocument(s):\n${documents.join('\n\n---\n\n')}`,
+          model: "google/gemini-2.0-flash-001",
+          maxTokens: 500,
         }),
       });
 
@@ -193,18 +197,18 @@ export function DocumentBuilder() {
       }
 
       const data = await response.json();
-      const extractedValue = data.choices[0]?.message?.content || 'Failed to extract information';
-
+      
+      // Use the response property which is extracted by the API
       setExtractedInfo(prev => ({
         ...prev,
         [fieldKey]: {
-          value: extractedValue,
+          value: data.response || '',
           reviewed: false
         }
       }));
     } catch (err) {
       console.error('Error extracting information:', err);
-      setError('Failed to extract information. Please try again.');
+      alert('Failed to extract information. Please try again later.');
     } finally {
       setExtractingField(null);
     }
@@ -212,118 +216,114 @@ export function DocumentBuilder() {
 
   const handleExtractAll = async () => {
     if (selectedFiles.length === 0) {
-      setError("Please select at least one document first");
+      alert('Please select at least one document to extract information from.');
       return;
     }
-    
+
     setExtractingAll(true);
-    setError(null);
-    
+
     try {
-      // Process fields one by one
       for (const field of fields) {
-        if (!field.key || !field.prompt) continue;
-        
-        setExtractingField(field.key);
-        try {
-          // Call extract for each field but don't let errors stop the whole process
-          await handleExtract(field.key);
-        } catch (error: any) {
-          console.error(`Error extracting ${field.key}:`, error);
-          // Continue with other fields even if one fails
-          setExtractedInfo(prev => ({
-            ...prev,
-            [field.key]: {
-              value: `Error extracting information: ${error.message || 'Unknown error'}`,
-              reviewed: false
-            }
-          }));
-        }
+        await handleExtract(field.key);
       }
-    } catch (err) {
-      console.error('Error during extract all operation:', err);
-      setError('Some fields failed to extract. Please check the results.');
     } finally {
-      setExtractingField(null);
       setExtractingAll(false);
     }
   };
 
-  const handleToggleReviewed = (key: string) => {
+  const handleUpdateExtractedValue = (fieldKey: string, value: string) => {
     setExtractedInfo(prev => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        reviewed: !prev[key]?.reviewed
+      [fieldKey]: {
+        ...prev[fieldKey],
+        value
       }
     }));
   };
 
-  const handleUpdateExtractedValue = (key: string, value: string) => {
+  const handleToggleReviewed = (fieldKey: string) => {
     setExtractedInfo(prev => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        value,
-        reviewed: true
+      [fieldKey]: {
+        ...prev[fieldKey],
+        reviewed: !prev[fieldKey]?.reviewed
       }
     }));
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <h1 className="text-3xl font-bold text-center mb-8 text-[#00185c]">
-        Document Builder
-      </h1>
-      
+    <div className="pb-20">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-deep-purple">Document Builder</h1>
+        <div className="flex items-center space-x-4">
+          <Link href="/field-prompt-manager" className="text-purple hover:underline flex items-center">
+            <PencilEditIcon size={16} />
+            <span className="ml-1">Manage Field-Prompt Templates</span>
+          </Link>
+          {availableConfigs.length > 0 && (
+            <div className="flex items-center">
+              <label htmlFor="configSelect" className="mr-2 text-sm font-medium text-gray-700">
+                Load Template:
+              </label>
+              <select
+                id="configSelect"
+                value={selectedConfig}
+                onChange={(e) => handleLoadConfig(e.target.value)}
+                className="form-select rounded-md border-gray-300 shadow-sm focus:border-purple focus:ring focus:ring-purple focus:ring-opacity-50"
+              >
+                <option value="">Select a template</option>
+                {availableConfigs.map(config => (
+                  <option key={config.id} value={config.id}>
+                    {config.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid gap-8">
         {/* Document Selection Section */}
         <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 transition-all hover:shadow-md">
-          <h2 className="text-xl font-semibold mb-4 text-[#00185c]">Document Management</h2>
+          <h2 className="text-xl font-semibold text-deep-purple mb-4">Document Management</h2>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
           
           {loading ? (
-            <div className="flex justify-center items-center h-40">
-              <LoaderIcon size={32} />
+            <div className="flex justify-center items-center h-32">
+              <LoaderIcon size={24} />
+              <span className="ml-2">Loading documents...</span>
             </div>
-          ) : error ? (
-            <div className="text-red-500 p-4 text-center">{error}</div>
           ) : (
             <>
               {userFiles.length === 0 ? (
-                <div className="text-center py-10 border-2 border-dashed border-gray-300 rounded-lg">
-                  <p className="text-gray-500 text-sm italic">No documents uploaded yet</p>
-                  <Link 
-                    href="/files" 
-                    className="mt-4 inline-block px-4 py-2 bg-[#2f59cf] text-white rounded-md hover:bg-[#00185c] transition-colors"
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">No documents found. Please upload some documents first.</p>
+                  <button
+                    onClick={() => router.push('/files')}
+                    className="inline-flex items-center px-4 py-2 bg-purple text-white rounded-md hover:bg-opacity-90"
                   >
-                    Go to Files Page to Upload
-                  </Link>
+                    <UploadIcon size={16} />
+                    <span className="ml-2">Go to Files Page</span>
+                  </button>
                 </div>
               ) : (
                 <>
-                  <div className="flex justify-between mb-4">
-                    <p className="text-gray-500 text-sm">
-                      Select documents to use for information extraction
-                    </p>
-                    <Link 
-                      href="/files" 
-                      className="text-[#2f59cf] hover:text-[#00185c] text-sm font-medium"
-                    >
-                      Upload New Documents
-                    </Link>
-                  </div>
-                  
-                  <div className="max-h-60 overflow-y-auto border rounded-lg">
-                    <table className="min-w-full border-collapse">
-                      <thead className="bg-gray-50 sticky top-0">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
                         <tr>
                           <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                           <th className="py-2 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Filename</th>
@@ -336,7 +336,7 @@ export function DocumentBuilder() {
                           <tr 
                             key={file.pathname}
                             className={`hover:bg-gray-50 cursor-pointer ${
-                              selectedFiles.includes(file.pathname) ? 'bg-[#f6f8fd]' : ''
+                              selectedFiles.includes(file.pathname) ? 'bg-light-white' : ''
                             } ${
                               processingDocuments[file.pathname] ? 'animate-pulse' : ''
                             }`}
@@ -347,13 +347,13 @@ export function DocumentBuilder() {
                                 type="checkbox" 
                                 checked={selectedFiles.includes(file.pathname)} 
                                 onChange={() => {}}
-                                className="h-4 w-4 text-[#2f59cf] focus:ring-[#2f59cf] border-gray-300 rounded"
+                                className="h-4 w-4 text-purple focus:ring-purple border-gray-300 rounded"
                               />
                             </td>
                             <td className="py-3 px-4 text-sm text-gray-900">
                               {file.pathname}
                               {processingDocuments[file.pathname] && (
-                                <span className="ml-2 text-xs text-[#2f59cf]">
+                                <span className="ml-2 text-xs text-purple">
                                   Processing...
                                 </span>
                               )}
@@ -380,7 +380,7 @@ export function DocumentBuilder() {
         {/* Information Extraction Section */}
         <section className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 transition-all hover:shadow-md">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-[#00185c]">Information Extraction</h2>
+            <h2 className="text-xl font-semibold text-deep-purple">Information Extraction</h2>
             <div className="flex space-x-3">
               <button
                 onClick={handleAddField}
@@ -394,7 +394,7 @@ export function DocumentBuilder() {
                 className={`px-3 py-1.5 text-sm rounded text-white transition-colors ${
                   extractingAll || selectedFiles.length === 0
                     ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-[#2f59cf] hover:bg-[#00185c]'
+                    : 'bg-purple hover:bg-deep-purple'
                 }`}
               >
                 {extractingAll ? (
@@ -421,17 +421,14 @@ export function DocumentBuilder() {
                         type="text"
                         value={field.key}
                         onChange={(e) => handleUpdateField(index, 'key', e.target.value)}
-                        className="text-sm font-medium bg-gray-100 border border-gray-300 rounded px-2 py-1 focus:border-[#2f59cf] focus:ring-1 focus:ring-[#2f59cf] focus:outline-none"
+                        className="text-sm font-medium bg-gray-100 border border-gray-300 rounded px-2 py-1 focus:border-purple focus:ring-1 focus:ring-purple focus:outline-none"
                         placeholder="Field Key"
                       />
                       <span className="mx-2 text-gray-400">=</span>
                     </div>
                     <button
                       onClick={() => handleDeleteField(index)}
-                      disabled={fields.length <= 1}
-                      className={`text-red-500 hover:text-red-700 transition-colors ${
-                        fields.length <= 1 ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
+                      className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <TrashIcon size={18} />
                     </button>
@@ -443,7 +440,7 @@ export function DocumentBuilder() {
                       <textarea
                         value={field.prompt}
                         onChange={(e) => handleUpdateField(index, 'prompt', e.target.value)}
-                        className="w-full h-24 text-sm bg-white border border-gray-300 rounded px-3 py-2 focus:border-[#2f59cf] focus:ring-1 focus:ring-[#2f59cf] focus:outline-none"
+                        className="w-full h-24 text-sm bg-white border border-gray-300 rounded px-3 py-2 focus:border-purple focus:ring-1 focus:ring-purple focus:outline-none"
                         placeholder="Enter prompt to extract this information"
                       />
                       <div className="mt-2">
@@ -453,7 +450,7 @@ export function DocumentBuilder() {
                           className={`flex items-center px-3 py-1.5 text-sm rounded text-white transition-colors ${
                             extractingField === field.key || extractingAll || !field.prompt || selectedFiles.length === 0
                               ? 'bg-gray-400 cursor-not-allowed'
-                              : 'bg-[#2f59cf] hover:bg-[#00185c]'
+                              : 'bg-purple hover:bg-deep-purple'
                           }`}
                         >
                           {extractingField === field.key ? (
@@ -478,7 +475,7 @@ export function DocumentBuilder() {
                                 type="checkbox"
                                 checked={extractedInfo[field.key]?.reviewed || false}
                                 onChange={() => handleToggleReviewed(field.key)}
-                                className="h-3 w-3 mr-1 text-[#2f59cf] focus:ring-[#2f59cf] border-gray-300 rounded"
+                                className="h-3 w-3 mr-1 text-purple focus:ring-purple border-gray-300 rounded"
                               />
                               Reviewed
                             </label>
@@ -488,7 +485,7 @@ export function DocumentBuilder() {
                       <textarea
                         value={extractedInfo[field.key]?.value || ''}
                         onChange={(e) => handleUpdateExtractedValue(field.key, e.target.value)}
-                        className="w-full h-24 text-sm bg-white border border-gray-300 rounded px-3 py-2 focus:border-[#2f59cf] focus:ring-1 focus:ring-[#2f59cf] focus:outline-none"
+                        className="w-full h-24 text-sm bg-white border border-gray-300 rounded px-3 py-2 focus:border-purple focus:ring-1 focus:ring-purple focus:outline-none"
                         placeholder="Extracted information will appear here"
                       />
                     </div>

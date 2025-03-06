@@ -42,6 +42,18 @@ export function LeftNav() {
               Files Page
             </Link>
           </li>
+          <li>
+            <Link 
+              href="/field-prompt-manager" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/field-prompt-manager') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Field-Prompt Manager
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

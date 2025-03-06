@@ -48,7 +48,17 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    
+    // Extract the actual response text for easier consumption by the client
+    const responseText = data.choices && 
+                        data.choices[0] && 
+                        data.choices[0].message && 
+                        data.choices[0].message.content || '';
+    
+    return NextResponse.json({
+      response: responseText,
+      rawResponse: data // Include the raw response for debugging
+    });
   } catch (error) {
     console.error('Query API error:', error);
     return NextResponse.json(

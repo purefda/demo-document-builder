@@ -9,6 +9,7 @@ import {
   generateText,
 } from "ai";
 import { z } from "zod";
+import { Chunk } from "@/schema";
 
 // schema for validating the custom provider metadata
 const selectionSchema = z.object({
@@ -82,7 +83,7 @@ export const ragMiddleware: Experimental_LanguageModelV1Middleware = {
       filePaths: selection.map((path) => `${session.user?.email}/${path}`),
     });
 
-    const chunksWithSimilarity = chunksBySelection.map((chunk) => ({
+    const chunksWithSimilarity = chunksBySelection.map((chunk: Chunk) => ({
       ...chunk,
       similarity: cosineSimilarity(
         hypotheticalAnswerEmbedding,
@@ -91,7 +92,7 @@ export const ragMiddleware: Experimental_LanguageModelV1Middleware = {
     }));
 
     // rank the chunks by similarity and take the top K
-    chunksWithSimilarity.sort((a, b) => b.similarity - a.similarity);
+    chunksWithSimilarity.sort((a: typeof chunksWithSimilarity[0], b: typeof chunksWithSimilarity[0]) => b.similarity - a.similarity);
     const k = 10;
     const topKChunks = chunksWithSimilarity.slice(0, k);
 
@@ -104,7 +105,7 @@ export const ragMiddleware: Experimental_LanguageModelV1Middleware = {
           type: "text",
           text: "Here is some relevant information that you can use to answer the question:",
         },
-        ...topKChunks.map((chunk) => ({
+        ...topKChunks.map((chunk: typeof chunksWithSimilarity[0]) => ({
           type: "text" as const,
           text: chunk.content,
         })),

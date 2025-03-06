@@ -1,8 +1,4 @@
 import { put, list, del, head } from '@vercel/blob';
-import { getPdfContentFromUrl } from '@/utils/pdf';
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { openai } from "@ai-sdk/openai";
-import { embedMany } from "ai";
 import { insertChunks, deleteChunksByFilePath } from '@/app/db';
 
 export interface FileMetadata {
@@ -22,39 +18,6 @@ export async function uploadFile(file: File, userEmail: string): Promise<FileMet
     access: 'public',
     addRandomSuffix: false, // Don't add random suffix to keep the filename clean
   });
-
-  // If it's a PDF, extract text and create embeddings
-  if (file.type === 'application/pdf') {
-    try {
-      const content = await getPdfContentFromUrl(downloadUrl);
-      const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-      });
-      const chunkedContent = await textSplitter.createDocuments([content]);
-
-      // Only proceed if we have content chunks to process
-      if (chunkedContent && chunkedContent.length > 0) {
-        const { embeddings } = await embedMany({
-          model: openai.embedding("text-embedding-3-small"),
-          values: chunkedContent.map((chunk) => chunk.pageContent),
-        });
-
-        await insertChunks({
-          chunks: chunkedContent.map((chunk, i) => ({
-            id: `${userEmail}/${file.name}/${i}`,
-            filePath: `${userEmail}/${file.name}`,
-            content: chunk.pageContent,
-            embedding: embeddings[i],
-          })),
-        });
-      } else {
-        console.warn('No content extracted from PDF, skipping chunk insertion');
-      }
-    } catch (error) {
-      console.error('Error processing PDF:', error);
-      // Continue even if embedding fails
-    }
-  }
 
   return {
     url,

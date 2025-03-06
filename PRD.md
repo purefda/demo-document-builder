@@ -19,6 +19,7 @@ Font:
 - There are these functions
     - Document Builder
     - Files Page
+    - Field-Prompt Manager
 
 
 # API
@@ -44,6 +45,10 @@ Font:
 ## Document Management
 - The platform should allow user to select uploaded docuemnts from the user, the page will display all docs upalod by the user and user should select which documents to use, if the user wnat to uplaod new documents it will forward user to the Files page.
 
+## Field-prompt manager
+- User can edit the fields-prompts, and they can save the config in this page as well
+- User can load other field-prompts config
+
 ## Information Extraction
 - The plaform allows the user to add, delete, modfil a kay value pairs like below
 ```
@@ -61,3 +66,8 @@ INDICATION_FOR_USE = "Write the indication for use for this device"
 - Users can not edit the files, but can edit file name
 - It will show the size of the file (Mb, GB, K etc)
 
+# Field-Prompt Manager
+- In the document builder page there are lots of field and prompts, and this page is the page to add, edit, remove it.
+- The field-prompts can be stored as a json file for the user, called a config
+- User can edit the field prompts and save or rename them, and can delete the config together as well
+- User can choose between a normal view or a json file to edit the field-prompt pairs
