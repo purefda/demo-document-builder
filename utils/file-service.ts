@@ -42,6 +42,30 @@ export async function listFiles(userEmail: string): Promise<FileMetadata[]> {
 }
 
 /**
+ * Get a specific file by pathname
+ */
+export async function getFile(userEmail: string, pathname: string): Promise<FileMetadata | null> {
+  // First try to find the file in the list
+  const { blobs } = await list({ prefix: `${userEmail}/${pathname}` });
+  
+  if (blobs.length > 0) {
+    const blob = blobs[0];
+    return {
+      url: blob.url,
+      pathname: blob.pathname.replace(`${userEmail}/`, ''),
+      size: blob.size,
+      uploadedAt: new Date(blob.uploadedAt),
+    };
+  }
+  
+  // If exact match not found, try listing all files and finding a match
+  const allFiles = await listFiles(userEmail);
+  const file = allFiles.find(file => file.pathname === pathname);
+  
+  return file || null;
+}
+
+/**
  * Delete a file from Vercel Blob Storage
  */
 export async function deleteFile(fileUrl: string, userEmail: string): Promise<void> {

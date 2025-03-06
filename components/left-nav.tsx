@@ -54,6 +54,18 @@ export function LeftNav() {
               Field-Prompt Manager
             </Link>
           </li>
+          <li>
+            <Link 
+              href="/chat-with-docs" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/chat-with-docs') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Chat with Docs
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

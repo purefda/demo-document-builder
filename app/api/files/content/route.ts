@@ -1,6 +1,6 @@
 import { auth } from "@/app/(auth)/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { head } from "@vercel/blob";
+import { getFile } from "@/utils/file-service";
 import { getPdfContentFromUrl } from "@/utils/pdf";
 
 export async function GET(request: NextRequest) {
@@ -11,15 +11,25 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const url = searchParams.get("url");
+  const pathname = searchParams.get("url");
   
-  if (!url) {
-    return NextResponse.json({ error: "URL not provided" }, { status: 400 });
+  if (!pathname) {
+    return NextResponse.json({ error: "Pathname not provided" }, { status: 400 });
   }
 
   try {
+    // First, get the file URL from the pathname
+    const file = await getFile(session.user.email, pathname);
+    
+    if (!file || !file.url) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+    
+    // Now we have the actual URL to fetch from blob storage
+    const url = file.url;
+    
     // Check if this is a PDF
-    const isPdf = url.toLowerCase().endsWith('.pdf') || 
+    const isPdf = pathname.toLowerCase().endsWith('.pdf') || 
       url.includes('application/pdf') || 
       url.includes('.pdf?');
 
