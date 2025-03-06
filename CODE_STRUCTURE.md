@@ -1,92 +1,136 @@
 # Code Structure Documentation
 
-This document provides an overview of the project's code structure and the purpose of key files and directories.
+This document provides an overview of the Document Information Extractor and Builder project's code structure and the purpose of key files and directories.
 
 ## Root Directory Structure
 
 ```
 .
 ├── app/                  # Next.js application routes and pages
-├── components/          # Reusable React components
-├── utils/              # Utility functions and helpers
-├── ai/                 # AI-related functionality
-├── public/             # Static assets
-├── tests/              # Test files
-├── drizzle/            # Database migration files
+│   ├── document-builder/ # Document Builder feature
+│   ├── files/            # Files management feature
+│   ├── field-prompt/     # Field-Prompt Manager feature
+│   ├── chat/             # Chat with Docs feature
+│   └── api/              # API routes including auth, chat, and query endpoints
+├── components/           # Reusable React components
+│   ├── ui/               # Shared UI components
+│   ├── document-builder/ # Document Builder specific components
+│   ├── files/            # Files management components
+│   ├── field-prompt/     # Field-Prompt Manager components
+│   └── chat/             # Chat with Docs components
+├── utils/                # Utility functions and helpers
+├── ai/                   # AI-related functionality and query processing
+├── public/               # Static assets
+├── tests/                # Test files
+├── drizzle/              # Database migration files
 └── various config files
 ```
 
-## Key Directories
+## Key Feature Directories
 
-### `/app`
-- Next.js 13+ app directory containing routes and pages
-- Uses the new App Router for routing
-- Contains page components and layouts
+### `/app/document-builder`
+- Main Document Builder page and functionality
+- Allows users to select uploaded documents
+- Implements the field-prompt extraction interface
+- Connects to the query API for information extraction
 
-### `/components`
-- Reusable React components
-- Shared UI elements used across different pages
+### `/app/files`
+- Files management page
+- File upload, listing, and deletion functionality
+- File metadata management
 
-### `/utils`
-- Utility functions and shared logic
-- Contains `supabase.ts` - Supabase client configuration and initialization
-- Helper functions and common code
+### `/app/field-prompt`
+- Field-Prompt Manager page
+- Interface for creating, editing, and saving field-prompt configurations
+- JSON editor for direct configuration editing
 
-### `/ai`
-- AI-related functionality and integrations
-- OpenAI and other AI service integrations
+### `/app/chat`
+- Chat with Docs interface
+- Document selection for chat context
+- Chat history management
+- Integration with the query API
 
-### `/tests`
-- Test files and testing utilities
-- Contains `test-db-connection.ts` for database connection testing
+### `/app/api`
+- `/api/auth` - Authentication endpoints
+- `/api/chat` - Chat processing endpoints
+- `/api/query` - Query API for OpenRouter integration
+  - Handles document processing and information extraction
 
-### `/drizzle`
-- Database migration files
-- Generated SQL and migration history
+## Key Component Directories
 
-## Key Files
+### `/components/ui`
+- Shared UI components used across features
+- Styled according to design specifications
+- Implements the left navigation sidebar
 
-### Database Configuration
-- `schema.ts` - Database schema definitions using Drizzle ORM
-- `drizzle.config.ts` - Drizzle ORM configuration
-- `migrate.ts` - Database migration utility
+### `/components/document-builder`
+- Components specific to the Document Builder feature
+- Field-prompt extraction interface components
+- Document selection and display components
+- Extraction result display and editing components
 
-### Configuration Files
-- `next.config.mjs` - Next.js configuration
-- `tailwind.config.ts` - Tailwind CSS configuration
-- `tsconfig.json` - TypeScript configuration
-- `postcss.config.mjs` - PostCSS configuration
-- `middleware.ts` - Next.js middleware configuration
+### `/components/files`
+- File upload components
+- File listing and management components
+- File metadata editing components
 
-### Environment and Dependencies
-- `.env.example` - Example environment variables template
-- `.env.local` - Local environment variables (not in git)
-- `package.json` - Project dependencies and scripts
+### `/components/field-prompt`
+- Field-prompt editor components
+- Configuration save/load functionality
+- JSON editor integration
+
+### `/components/chat`
+- Chat interface components
+- Document selection components
+- Message display and input components
 
 ## Database Schema
 
-The database schema (defined in `schema.ts`) includes:
+The database schema includes:
 
 1. `User` table:
    - `email` (primary key)
    - `password`
 
-2. `Chat` table:
+2. `Document` table:
    - `id` (primary key)
-   - `createdAt`
-   - `messages`
-   - `author` (references User.email)
-
-3. `Chunk` table:
-   - `id` (primary key)
+   - `fileName`
    - `filePath`
+   - `fileSize`
+   - `uploadedAt`
+   - `uploadedBy` (references User.email)
+
+3. `FieldPromptConfig` table:
+   - `id` (primary key)
+   - `name`
+   - `config` (JSON)
+   - `createdAt`
+   - `updatedAt`
+   - `createdBy` (references User.email)
+
+4. `Chunk` table:
+   - `id` (primary key)
+   - `documentId` (references Document.id)
    - `content`
    - `embedding`
 
+5. `Chat` table:
+   - `id` (primary key)
+   - `createdAt`
+   - `messages` (JSON)
+   - `documentIds` (array of Document.id)
+   - `author` (references User.email)
+
 ## Key Integrations
+
+### OpenRouter Integration
+- Configuration in `utils/openrouter.ts`
+- Default model: google/gemini-2.0-flash-001:online
+- Used for document information extraction and chat functionality
 
 ### Supabase Integration
 - Configuration in `utils/supabase.ts`
+- Used for database and storage
 - Uses environment variables:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
@@ -101,22 +145,22 @@ The database schema (defined in `schema.ts`) includes:
 - Uses NextAuth.js for authentication
 - Configuration integrated with Supabase
 
-## Development Tools
+## Design Implementation
 
-1. **Package Manager**
-   - Uses pnpm for dependency management
+1. **Styling**
+   - Uses Tailwind CSS with custom theme
+   - Color palette:
+     - Purple: #2f59cf
+     - Deep Purple: #00185c
+     - Light White: #f6f8fd
+   - Font configuration:
+     - Titles: Fraktion Sans Variable
+     - Text: Soehne
 
-2. **TypeScript**
-   - Strict type checking enabled
-   - Configuration in `tsconfig.json`
-
-3. **Testing**
-   - Test files located in `/tests`
-   - Includes database connection testing
-
-4. **Styling**
-   - Uses Tailwind CSS
-   - Configuration in `tailwind.config.ts`
+2. **Layout**
+   - Left navigation sidebar always visible
+   - Main content area for each feature
+   - Responsive design for various screen sizes
 
 ## Environment Variables
 
@@ -126,4 +170,5 @@ Key environment variables required:
 - `BLOB_READ_WRITE_TOKEN` - For blob storage
 - `SUPABASE_URL` - Supabase project URL
 - `SUPABASE_ANON_KEY` - Supabase anonymous key
-- `SUPABASE_DB_URL` - Supabase database connection string 
+- `SUPABASE_DB_URL` - Supabase database connection string
+- `OPENROUTER_API_KEY` - For access to OpenRouter AI models 

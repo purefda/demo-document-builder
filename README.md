@@ -1,39 +1,43 @@
-# Internal Knowledge Base Preview
+# Document Information Extractor and Builder
 
-This template demonstrates the usage of the [Language Model Middleware](https://sdk.vercel.ai/docs/ai-sdk-core/middleware#language-model-middleware) to perform retrieval augmented generation and enforce guardrails using the [AI SDK](https://sdk.vercel.ai/docs) and [Next.js](https://nextjs.org/).
+This application provides a powerful tool for extracting structured information from documents using AI. It's particularly focused on processing medical device Instructions for Use (IFU) documents, allowing users to define custom fields and prompts to extract specific information.
 
-## Deploy your own
+## Key Features
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-preview-internal-knowledge-base&env=OPENAI_API_KEY%2CAUTH_SECRET&envDescription=API%20keys%20needed%20for%20application&envLink=https%3A%2F%2Fgithub.com%2Fvercel-labs%2Fai-sdk-preview-internal-knowledge-base%2Fblob%2Fmain%2F.env.example&stores=%5B%7B%22type%22%3A%22blob%22%7D%2C%7B%22type%22%3A%22postgres%22%7D%5D)
-
-## How to use
-
-Run [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
-
-```bash
-npx create-next-app --example https://github.com/vercel-labs/ai-sdk-preview-internal-knowledge-base ai-sdk-preview-internal-knowledge-base-example
-```
-
-```bash
-yarn create next-app --example https://github.com/vercel-labs/ai-sdk-preview-internal-knowledge-base ai-sdk-preview-internal-knowledge-base-example
-```
-
-```bash
-pnpm create next-app --example https://github.com/vercel-labs/ai-sdk-preview-internal-knowledge-base ai-sdk-preview-internal-knowledge-base-example
-```
+- **Document Builder**: Extract structured information from uploaded documents using customizable field-prompt pairs
+- **Files Management**: Upload, organize, and manage your document library
+- **Field-Prompt Manager**: Create, edit, and save configurations of field-prompt pairs
+- **Chat with Docs**: Interactive chat interface to query information from your documents
 
 To run the example locally you need to:
 
-1. Sign up for accounts with the AI providers you want to use (e.g., OpenAI, Anthropic).
-2. Obtain API keys for each provider.
-3. Set the required environment variables as shown in the `.env.example` file, but in a new file called `.env`.
+1. Sign up for an OpenRouter account to access AI models, particularly google/gemini-2.0-flash-001.
+2. Create a Supabase account for database and storage functionality.
+3. Set the required environment variables as shown in the `.env.example` file in a new `.env` file.
 4. `npm install` to install the required dependencies.
 5. `npm run dev` to launch the development server.
 
+## Environment Variables
+
+Required environment variables:
+- `OPENAI_API_KEY` - For AI functionality
+- `AUTH_SECRET` - For authentication
+- `BLOB_READ_WRITE_TOKEN` - For blob storage
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_DB_URL` - Supabase database connection string
+
+## Design Specifications
+
+The application follows these design specifications:
+- **Colors**: Purple (#2f59cf), Deep Purple (#00185c), Light White (#f6f8fd)
+- **Fonts**: Fraktion Sans Variable (titles), Soehne (text)
+- **Navigation**: Left sidebar with links to Document Builder, Files Page, Field-Prompt Manager, and Chat with Docs
 
 ## Learn More
 
-To learn more about the AI SDK or Next.js by Vercel, take a look at the following resources:
+To learn more about the technologies used in this project:
 
 - [AI SDK Documentation](https://sdk.vercel.ai/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)

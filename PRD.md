@@ -20,7 +20,7 @@ Font:
     - Document Builder
     - Files Page
     - Field-Prompt Manager
-
+    - Chat with Docs
 
 # API
 
@@ -71,3 +71,10 @@ INDICATION_FOR_USE = "Write the indication for use for this device"
 - The field-prompts can be stored as a json file for the user, called a config
 - User can edit the field prompts and save or rename them, and can delete the config together as well
 - User can choose between a normal view or a json file to edit the field-prompt pairs
+
+# Chat with Docs
+- In the Chat with Docs page, it's a chatting bot page
+- You can select the docments you want to chat with
+- We will use the api/query api
+- We will send the text in the docs and the last 10 chat history to the API to get the response
+- Use model google/gemini-2.0-flash-001
