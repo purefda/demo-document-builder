@@ -60,6 +60,13 @@ INDICATION_FOR_USE = "Write the indication for use for this device"
 - We are uplaoding lots of medical device Instructions for Use (IFU) docuemnts, please create a 10 fake fields and prompts so we can run it through
 - We will use the api/query to implement this. It will send all the docs information and the fields to be extraced to the API and get the extracted results out. 
 
+## Document Building
+- at the botton of the page, below the extraction section, is the document building section
+- user can select ONE file from their files as the template. it's a docx file.
+- Then the user click build the document, we will find all the "{{}}" in the docx files to repalce with the key values we extracted from the doc that showing above.
+- After the is generated, the doc will automatically downloaded.
+- Build a new API for this, called api/fill-document
+
 # Files Page
 - This will will show all the files users has uploaded before, ordered by timestamp
 - Users are able to upload more files or remove files.

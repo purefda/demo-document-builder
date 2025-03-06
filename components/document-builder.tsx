@@ -5,6 +5,7 @@ import { InfoIcon, LoaderIcon, TrashIcon, UploadIcon, PencilEditIcon } from "./i
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FieldPrompt } from "@/utils/field-prompt-service";
+import { DocumentBuildingSection } from './document-builder/document-building-section';
 
 // Example medical device fields for extraction based on the PRD
 const DEFAULT_FIELDS: FieldPrompt[] = [
@@ -514,6 +515,12 @@ export function DocumentBuilder() {
             </div>
           )}
         </section>
+
+        {/* Document Building Section */}
+        <DocumentBuildingSection 
+          userFiles={userFiles} 
+          extractedInfo={extractedInfo}
+        />
       </div>
     </div>
   );
