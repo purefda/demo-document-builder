@@ -45,6 +45,31 @@ The system uses docxtemplater to handle the replacements. Key features:
 - Supports complex scenarios like loops and conditional sections (if needed in the future)
 - Preserves original placeholders when no corresponding value is provided (won't replace with "undefined")
 
+### docxtemplater Implementation
+
+The implementation follows the modern docxtemplater API pattern:
+```javascript
+// Create docxtemplater instance with all options in a single constructor call
+const doc = new Docxtemplater(zip, {
+  delimiters: { start: '{{', end: '}}' },
+  linebreaks: true,
+  nullGetter: (part) => {
+    // Custom logic to preserve original placeholders
+    if (!part.module) {
+      const tag = typeof part.value === 'function' ? part.value() : part.value;
+      return `{{${tag}}}`;
+    }
+    return '';
+  }
+});
+
+// Render with data
+doc.render(data);
+
+// Generate output
+const filledDocBuffer = doc.getZip().generate({ type: 'arraybuffer' });
+```
+
 ### Handling Missing Values
 
 When a template contains a placeholder like `{{KEY}}` but no value is provided for that key, the system will:

@@ -47,33 +47,32 @@ async function processDocxTemplate(
       return null;
     }
     
-    const doc = new Docxtemplater()
-      .loadZip(zip)
-      .setOptions({ 
-        delimiters: { start: '{{', end: '}}' },
-        linebreaks: true, // Enable proper line break handling
-        // @ts-ignore - Using any types to work around TypeScript checking
-        nullGetter: (part: any): string => {
-          // When a value is not defined, return the original placeholder
-          if (!part.module) {
-            // For simple tags, return the original tag text
-            try {
-              // Try to get the tag name - may vary based on docxtemplater version
-              const tag = typeof part.value === 'function' 
-                ? part.value() 
-                : part.value;
-              return `{{${tag}}}`;
-            } catch (e) {
-              console.error('Error in nullGetter:', e);
-              return '{{UNDEFINED}}';
-            }
+    // Create docxtemplater instance with all options in a single constructor call (modern API)
+    const doc = new Docxtemplater(zip, {
+      delimiters: { start: '{{', end: '}}' },
+      linebreaks: true, // Enable proper line break handling
+      nullGetter: (part: any): string => {
+        // When a value is not defined, return the original placeholder
+        if (!part.module) {
+          // For simple tags, return the original tag text
+          try {
+            // Try to get the tag name - may vary based on docxtemplater version
+            const tag = typeof part.value === 'function' 
+              ? part.value() 
+              : part.value;
+            return `{{${tag}}}`;
+          } catch (e) {
+            console.error('Error in nullGetter:', e);
+            return '{{UNDEFINED}}';
           }
-          // For other tags (loops, etc.), return an empty string
-          return '';
         }
-      })
-      .setData(data)
-      .render();
+        // For other tags (loops, etc.), return an empty string
+        return '';
+      }
+    });
+    
+    // Render the document with the provided data
+    doc.render(data);
     
     // 3. Generate the filled document
     const filledDocBuffer = doc.getZip().generate({ type: 'arraybuffer' });
