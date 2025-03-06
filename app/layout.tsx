@@ -1,5 +1,6 @@
 import { LeftNav } from "@/components/left-nav";
 import { Navbar } from "@/components/navbar";
+import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({
         <main className="ml-56 pt-16 min-h-screen">
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );

@@ -11,25 +11,40 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const pathname = searchParams.get("url");
+  const urlParam = searchParams.get("url");
+  const pathnameParam = searchParams.get("pathname");
   
-  if (!pathname) {
-    return NextResponse.json({ error: "Pathname not provided" }, { status: 400 });
+  // Use either the url or pathname parameter
+  const fileIdentifier = urlParam || pathnameParam;
+  
+  if (!fileIdentifier) {
+    return NextResponse.json({ error: "Neither URL nor pathname provided" }, { status: 400 });
   }
 
   try {
-    // First, get the file URL from the pathname
-    const file = await getFile(session.user.email, pathname);
+    let url: string;
+    let filePath: string;
     
-    if (!file || !file.url) {
-      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    if (pathnameParam) {
+      // If pathname is provided, get the file URL
+      const file = await getFile(session.user.email, pathnameParam);
+      
+      if (!file || !file.url) {
+        return NextResponse.json({ error: `File not found: ${pathnameParam}` }, { status: 404 });
+      }
+      
+      url = file.url;
+      filePath = pathnameParam;
+    } else {
+      // If URL is provided directly
+      url = fileIdentifier;
+      filePath = urlParam || '';
     }
     
-    // Now we have the actual URL to fetch from blob storage
-    const url = file.url;
+    console.log(`Processing file: ${filePath}, URL: ${url}`);
     
     // Check if this is a PDF
-    const isPdf = pathname.toLowerCase().endsWith('.pdf') || 
+    const isPdf = filePath.toLowerCase().endsWith('.pdf') || 
       url.includes('application/pdf') || 
       url.includes('.pdf?');
 

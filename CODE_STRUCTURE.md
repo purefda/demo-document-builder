@@ -136,6 +136,12 @@ The database schema includes:
   - `SUPABASE_ANON_KEY`
   - `SUPABASE_DB_URL`
 
+### Vercel Analytics Integration
+- Added for usage tracking and performance monitoring
+- Integrated into the root layout component (`app/layout.tsx`)
+- Provides insights into user behavior and application performance
+- No additional configuration required beyond package installation
+
 ### Database ORM
 - Uses Drizzle ORM for database operations
 - Configuration in `drizzle.config.ts`

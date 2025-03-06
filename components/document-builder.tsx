@@ -157,16 +157,35 @@ export function DocumentBuilder() {
         try {
           // Get the file from userFiles array
           const file = userFiles.find(f => f.pathname === filePath);
-          if (!file) continue;
-
-          // Get the document content
-          const contentResponse = await fetch(`/api/files/content?url=${encodeURIComponent(file.url)}`);
-          if (!contentResponse.ok) {
-            throw new Error(`Failed to get content for ${filePath}`);
+          if (!file) {
+            console.error(`File not found in userFiles: ${filePath}`);
+            continue;
           }
 
-          const content = await contentResponse.text();
-          documents.push(content);
+          console.log(`Attempting to fetch content for: ${filePath}`);
+          console.log(`File URL: ${file.url}`);
+          
+          // Get the document content
+          try {
+            // Pass both pathname and url to the API
+            const contentResponse = await fetch(`/api/files/content?pathname=${encodeURIComponent(filePath)}&url=${encodeURIComponent(file.url)}`);
+            
+            if (!contentResponse.ok) {
+              console.error(`Failed to fetch content: ${contentResponse.status} ${contentResponse.statusText}`);
+              throw new Error(`Failed to get content for ${filePath}`);
+            }
+
+            const contentData = await contentResponse.json();
+            if (!contentData.content) {
+              console.error(`No content in response for: ${filePath}`);
+              throw new Error(`Failed to extract content from ${filePath}`);
+            }
+            
+            documents.push(contentData.content);
+          } catch (error) {
+            console.error(`Error fetching content for ${filePath}:`, error);
+            throw new Error(`Failed to get content for ${filePath}`);
+          }
         } finally {
           setProcessingDocuments(prev => ({ ...prev, [filePath]: false }));
         }

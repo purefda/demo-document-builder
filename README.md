@@ -8,6 +8,7 @@ This application provides a powerful tool for extracting structured information 
 - **Files Management**: Upload, organize, and manage your document library
 - **Field-Prompt Manager**: Create, edit, and save configurations of field-prompt pairs
 - **Chat with Docs**: Interactive chat interface to query information from your documents
+- **Analytics**: Integrated with Vercel Analytics for usage tracking and performance monitoring
 
 To run the example locally you need to:
 
@@ -41,3 +42,4 @@ To learn more about the technologies used in this project:
 - [AI SDK Documentation](https://sdk.vercel.ai/docs)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Supabase Documentation](https://supabase.com/docs)
+- [Vercel Analytics Documentation](https://vercel.com/docs/analytics)
