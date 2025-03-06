@@ -208,7 +208,7 @@ export function DocumentBuilder() {
           systemPrompt: systemPrompt,
           userPrompt: `key is ${fieldToExtract.key}, and the prompt is ${fieldToExtract.prompt}\n\nDocument(s):\n${documents.join('\n\n---\n\n')}`,
           model: "google/gemini-2.0-flash-001",
-          maxTokens: 500,
+          maxTokens: 5000,
         }),
       });
 
