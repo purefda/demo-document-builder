@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { v4 as uuid } from 'uuid';
 import { SubmissionChecklistConfig, ChecklistItem } from '@/utils/submission-checklist-service';
 
 export function SubmissionChecklist() {
