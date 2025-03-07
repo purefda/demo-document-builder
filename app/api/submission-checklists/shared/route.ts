@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/app/(auth)/auth';
-import { v4 as uuid } from 'uuid';
 import { 
   saveSubmissionChecklistConfig, 
   listSharedSubmissionChecklistConfigs,
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     // Create a new ID if not provided
-    const configId = body.id || uuid();
+    const configId = body.id;
     
     // Create new configuration or update existing one as shared
     const config: Omit<SubmissionChecklistConfig, 'updatedAt'> = {
