@@ -81,8 +81,8 @@ export function ChatWithDocs() {
       if (fileContents[filePathname]) return;
       
       try {
-        // Pass the pathname directly instead of a URL
-        const response = await fetch(`/api/files/content?url=${encodeURIComponent(filePathname)}`);
+        // Use pathname parameter instead of url parameter for clarity and consistency
+        const response = await fetch(`/api/files/content?pathname=${encodeURIComponent(filePathname)}`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch document content: ${response.status}`);
@@ -98,20 +98,19 @@ export function ChatWithDocs() {
         // Set empty content to avoid repeated failing requests
         setFileContents(prev => ({
           ...prev,
-          [filePathname]: "Error: Could not load document content."
+          [filePathname]: ''
         }));
-        toast.error(`Failed to load content for ${filePathname}`);
+        toast.error(`Failed to load document: ${filePathname}`);
       }
     };
 
-    // Fetch content for each selected file
-    selectedFileIds.forEach(fileId => {
-      const file = files.find(f => f.pathname === fileId);
-      if (file && !fileContents[file.pathname]) {
-        fetchFileContent(file.pathname);
-      }
-    });
-  }, [selectedFileIds, files, fileContents]);
+    // If files are selected, get their content
+    if (selectedFileIds.length > 0) {
+      selectedFileIds.forEach(fileId => {
+        fetchFileContent(fileId);
+      });
+    }
+  }, [selectedFileIds, fileContents]);
 
   // Scroll to bottom when messages change
   useEffect(() => {

@@ -10,7 +10,7 @@ This document provides an overview of the Document Information Extractor and Bui
 │   ├── document-builder/ # Document Builder feature
 │   ├── files/            # Files management feature
 │   ├── field-prompt/     # Field-Prompt Manager feature
-│   ├── chat/             # Chat with Docs feature
+│   ├── chat-with-docs/   # Chat with Docs feature
 │   └── api/              # API routes including auth, chat, and query endpoints
 ├── components/           # Reusable React components
 │   ├── ui/               # Shared UI components
@@ -33,6 +33,7 @@ This document provides an overview of the Document Information Extractor and Bui
 - Allows users to select uploaded documents
 - Implements the field-prompt extraction interface
 - Connects to the query API for information extraction
+- Loads both personal and shared field-prompt configurations
 
 ### `/app/files`
 - Files management page
@@ -43,8 +44,9 @@ This document provides an overview of the Document Information Extractor and Bui
 - Field-Prompt Manager page
 - Interface for creating, editing, and saving field-prompt configurations
 - JSON editor for direct configuration editing
+- Support for shared configurations across all users
 
-### `/app/chat`
+### `/app/chat-with-docs`
 - Chat with Docs interface
 - Document selection for chat context
 - Chat history management
@@ -55,6 +57,10 @@ This document provides an overview of the Document Information Extractor and Bui
 - `/api/chat` - Chat processing endpoints
 - `/api/query` - Query API for OpenRouter integration
   - Handles document processing and information extraction
+- `/api/field-prompts` - Field-prompt configuration management
+  - `/api/field-prompts/shared` - Shared field-prompt configuration endpoints
+- `/api/files` - File management endpoints
+  - `/api/files/content` - Document content retrieval with improved error handling
 
 ## Key Component Directories
 
@@ -68,6 +74,7 @@ This document provides an overview of the Document Information Extractor and Bui
 - Field-prompt extraction interface components
 - Document selection and display components
 - Extraction result display and editing components
+- Integration with both personal and shared field-prompt configurations
 
 ### `/components/files`
 - File upload components
@@ -78,11 +85,34 @@ This document provides an overview of the Document Information Extractor and Bui
 - Field-prompt editor components
 - Configuration save/load functionality
 - JSON editor integration
+- Shared configuration management interface
 
 ### `/components/chat`
 - Chat interface components
 - Document selection components
 - Message display and input components
+- Robust document content fetching
+
+## Key Utilities
+
+### Field-Prompt Service (`utils/field-prompt-service.ts`)
+- Handles storage and retrieval of field-prompt configurations
+- Manages both personal and shared configurations
+- Uses Vercel Blob for storage
+- Includes functions for:
+  - Saving configurations (personal or shared)
+  - Listing all configurations (including shared ones)
+  - Retrieving specific configurations
+  - Deleting configurations
+
+### File Service (`utils/file-service.ts`)
+- Manages file storage in Vercel Blob
+- Provides file metadata management
+- Supports secure file access 
+
+### PDF Handling (`utils/pdf.ts`)
+- Utilities for extracting text content from PDF files
+- Used by the content API for document processing
 
 ## Database Schema
 
@@ -107,6 +137,7 @@ The database schema includes:
    - `createdAt`
    - `updatedAt`
    - `createdBy` (references User.email)
+   - `isShared` (boolean flag for shared configurations)
 
 4. `Chunk` table:
    - `id` (primary key)
@@ -135,6 +166,13 @@ The database schema includes:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
   - `SUPABASE_DB_URL`
+
+### Vercel Blob Storage Integration
+- Used for storing files and field-prompt configurations
+- Organized structure:
+  - User-specific files: `{userEmail}/{fileName}`
+  - Personal field-prompt configs: `field-prompts/{userEmail}/{configId}.json`
+  - Shared field-prompt configs: `field-prompts/shared/{configId}.json`
 
 ### Vercel Analytics Integration
 - Added for usage tracking and performance monitoring
@@ -178,3 +216,4 @@ Key environment variables required:
 - `SUPABASE_ANON_KEY` - Supabase anonymous key
 - `SUPABASE_DB_URL` - Supabase database connection string
 - `OPENROUTER_API_KEY` - For access to OpenRouter AI models 
+

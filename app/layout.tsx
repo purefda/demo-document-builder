@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     "https://ai-sdk-preview-internal-knowledge-base.vercel.app",
   ),
-  title: "Pure Global Document Builder",
+  title: "Pure Global Document AI",
   description:
     "Extract and analyze document information with AI-powered document processing",
 };

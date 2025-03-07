@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     let url: string;
     let filePath: string;
     
+    // Prefer using pathname parameter for consistency
     if (pathnameParam) {
       // If pathname is provided, get the file URL
       const file = await getFile(session.user.email, pathnameParam);
@@ -35,13 +36,40 @@ export async function GET(request: NextRequest) {
       
       url = file.url;
       filePath = pathnameParam;
+    } else if (urlParam) {
+      // If URL is provided directly, validate it's a proper URL
+      if (!urlParam.startsWith('http://') && !urlParam.startsWith('https://')) {
+        // If it's not a valid URL, try to get the file by treating it as a pathname
+        const file = await getFile(session.user.email, urlParam);
+        
+        if (!file || !file.url) {
+          return NextResponse.json({ 
+            error: `Invalid URL and file not found as pathname: ${urlParam}` 
+          }, { status: 400 });
+        }
+        
+        url = file.url;
+        filePath = urlParam;
+      } else {
+        url = urlParam;
+        filePath = urlParam.substring(urlParam.lastIndexOf('/') + 1);
+      }
     } else {
-      // If URL is provided directly
-      url = fileIdentifier;
-      filePath = urlParam || '';
+      // This shouldn't happen due to the check above, but TypeScript doesn't know that
+      return NextResponse.json({ error: "No file identifier provided" }, { status: 400 });
     }
     
     console.log(`Processing file: ${filePath}, URL: ${url}`);
+    
+    // Make sure URL is valid before proceeding
+    try {
+      // This will throw an error if the URL is invalid
+      new URL(url);
+    } catch (error) {
+      return NextResponse.json({ 
+        error: `Invalid URL format: ${url}` 
+      }, { status: 400 });
+    }
     
     // Check if this is a PDF
     const isPdf = filePath.toLowerCase().endsWith('.pdf') || 

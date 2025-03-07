@@ -10,6 +10,8 @@ interface Config {
   fields: FieldPrompt[];
   createdAt?: Date;
   updatedAt?: Date;
+  isShared?: boolean;
+  userEmail?: string;
 }
 
 export function FieldPromptManager() {
@@ -23,6 +25,7 @@ export function FieldPromptManager() {
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [isShared, setIsShared] = useState<boolean>(false);
 
   // Default fields when creating a new configuration
   const DEFAULT_FIELDS = useMemo<FieldPrompt[]>(() => [
@@ -54,6 +57,7 @@ export function FieldPromptManager() {
       if (parsedConfigs.length > 0) {
         setCurrentConfig(parsedConfigs[0]);
         setConfigName(parsedConfigs[0].name);
+        setIsShared(!!parsedConfigs[0].isShared);
       } else {
         // Initialize with a default config if none exists
         // Instead of calling handleCreateNewConfig, create a new config directly
@@ -61,6 +65,7 @@ export function FieldPromptManager() {
           id: `config-${Date.now()}`,
           name: "New Configuration",
           fields: [...DEFAULT_FIELDS],
+          isShared: false,
         };
         setCurrentConfig(newConfig);
         setConfigName(newConfig.name);
@@ -81,6 +86,7 @@ export function FieldPromptManager() {
   useEffect(() => {
     if (currentConfig) {
       setJsonConfig(JSON.stringify(currentConfig.fields, null, 2));
+      setIsShared(!!currentConfig.isShared);
     }
   }, [currentConfig, isJsonView]);
 
@@ -89,6 +95,7 @@ export function FieldPromptManager() {
     if (selected) {
       setCurrentConfig(selected);
       setConfigName(selected.name);
+      setIsShared(!!selected.isShared);
     }
   };
 
@@ -97,9 +104,11 @@ export function FieldPromptManager() {
       id: `config-${Date.now()}`,
       name: "New Configuration",
       fields: [...DEFAULT_FIELDS],
+      isShared: false,
     };
     setCurrentConfig(newConfig);
     setConfigName(newConfig.name);
+    setIsShared(false);
     setIsEditing(true);
   };
 
@@ -113,6 +122,7 @@ export function FieldPromptManager() {
       const configToSave = {
         ...currentConfig,
         name: configName,
+        isShared: isShared,
         fields: isJsonView ? JSON.parse(jsonConfig) : currentConfig.fields
       };
       
@@ -277,81 +287,107 @@ export function FieldPromptManager() {
         </div>
       )}
 
-      <div className="flex mb-6">
-        <div className="w-1/4 mr-4 bg-white rounded-md shadow-sm p-4">
-          <h2 className="text-lg font-medium mb-4">Saved Configurations</h2>
-          {configs.length === 0 ? (
-            <p className="text-gray-500">No configurations found</p>
-          ) : (
-            <ul className="space-y-2">
+      <div className="grid grid-cols-4 gap-6">
+        <div className="col-span-1">
+          <h2 className="text-lg font-medium mb-3 text-deep-purple">Configurations</h2>
+          <div className="border rounded-md overflow-hidden">
+            <ul className="divide-y divide-gray-200">
               {configs.map(config => (
                 <li 
-                  key={config.id}
-                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
+                  key={config.id} 
+                  className={`flex items-center justify-between p-3 cursor-pointer hover:bg-light-white ${
                     currentConfig?.id === config.id ? 'bg-light-white' : ''
                   }`}
                   onClick={() => handleConfigChange(config.id)}
                 >
-                  <span className="truncate">{config.name}</span>
-                  <button 
+                  <div>
+                    <div className="font-medium">{config.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {config.fields?.length || 0} fields
+                      {config.isShared && 
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          Shared
+                        </span>
+                      }
+                    </div>
+                    {config.userEmail && 
+                      <div className="text-xs text-gray-500">
+                        Created by: {config.userEmail}
+                      </div>
+                    }
+                  </div>
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteConfig(config.id);
                     }}
-                    className="text-red-600 hover:text-red-800"
+                    className="p-1 text-gray-500 hover:text-red-500"
                     disabled={isDeleting}
                   >
-                    {isDeleting && currentConfig?.id === config.id ? (
-                      <LoaderIcon size={16} />
-                    ) : (
-                      <TrashIcon size={16} />
-                    )}
+                    {isDeleting ? <LoaderIcon size={16} /> : <TrashIcon size={16} />}
                   </button>
                 </li>
               ))}
             </ul>
-          )}
+          </div>
         </div>
 
-        <div className="w-3/4 bg-white rounded-md shadow-sm p-4">
+        <div className="col-span-3">
           {currentConfig ? (
             <>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center">
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={configName}
-                      onChange={(e) => setConfigName(e.target.value)}
-                      className="border-b-2 border-purple focus:outline-none text-xl font-semibold"
-                    />
-                  ) : (
-                    <h2 className="text-xl font-semibold">{configName}</h2>
-                  )}
-                  <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="ml-2 text-gray-600 hover:text-gray-800"
-                  >
-                    <PencilEditIcon size={16} />
-                  </button>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-1 mr-4">
+                  <input
+                    type="text"
+                    value={configName}
+                    onChange={(e) => setConfigName(e.target.value)}
+                    disabled={!isEditing}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Configuration Name"
+                  />
                 </div>
-                <button
-                  onClick={handleSaveConfig}
-                  disabled={isSaving}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple rounded-md hover:bg-opacity-90 transition disabled:opacity-50"
-                >
-                  {isSaving ? <LoaderIcon size={16} /> : <InfoIcon size={16} />}
-                  <span className="ml-2">Save Configuration</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center mr-4">
+                    <input
+                      type="checkbox"
+                      id="shared-checkbox"
+                      checked={isShared}
+                      onChange={(e) => setIsShared(e.target.checked)}
+                      disabled={!isEditing}
+                      className="mr-2 h-4 w-4 text-purple focus:ring-purple rounded"
+                    />
+                    <label htmlFor="shared-checkbox" className="text-sm text-gray-700">
+                      Make available to all users
+                    </label>
+                  </div>
+                  
+                  {isEditing ? (
+                    <button
+                      onClick={handleSaveConfig}
+                      className="px-4 py-2 text-sm font-medium text-white bg-purple rounded-md hover:bg-opacity-90 transition flex items-center"
+                      disabled={isSaving}
+                    >
+                      {isSaving && <LoaderIcon size={16} />}
+                      <span className="ml-2">Save Configuration</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="px-4 py-2 text-sm font-medium text-white bg-purple rounded-md hover:bg-opacity-90 transition"
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               {isJsonView ? (
-                <div className="mb-4">
+                <div className="border rounded-md">
                   <textarea
                     value={jsonConfig}
                     onChange={(e) => handleJsonChange(e.target.value)}
-                    className="w-full h-96 p-4 font-mono text-sm border border-gray-300 rounded-md"
-                    spellCheck="false"
+                    disabled={!isEditing}
+                    className="w-full h-96 p-4 font-mono text-sm"
                   />
                 </div>
               ) : (

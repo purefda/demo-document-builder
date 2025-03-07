@@ -34,6 +34,8 @@ interface FieldPromptConfig {
   fields: FieldPrompt[];
   createdAt?: Date;
   updatedAt?: Date;
+  isShared?: boolean;
+  userEmail?: string;
 }
 
 export function DocumentBuilder() {
@@ -75,16 +77,25 @@ export function DocumentBuilder() {
   // Load field configurations from API
   const loadFieldConfigs = async () => {
     try {
+      // Fetch user's personal configurations
       const response = await fetch('/api/field-prompts');
       
-      if (!response.ok) {
-        if (response.status !== 401) { // Ignore auth errors to allow document builder to work without login
-          console.error(`Failed to fetch field-prompt configs: ${response.status}`);
-        }
-        return;
+      let configs = [];
+      if (response.ok) {
+        configs = await response.json();
+      } else if (response.status !== 401) { // Ignore auth errors to allow document builder to work without login
+        console.error(`Failed to fetch field-prompt configs: ${response.status}`);
       }
       
-      const configs = await response.json();
+      // Fetch shared configurations
+      const sharedResponse = await fetch('/api/field-prompts/shared');
+      
+      if (sharedResponse.ok) {
+        const sharedConfigs = await sharedResponse.json();
+        // Combine personal and shared configs
+        configs = [...configs, ...sharedConfigs];
+      }
+      
       setAvailableConfigs(configs);
     } catch (err) {
       console.error('Error loading field configurations:', err);
@@ -168,8 +179,8 @@ export function DocumentBuilder() {
           
           // Get the document content
           try {
-            // Pass both pathname and url to the API
-            const contentResponse = await fetch(`/api/files/content?pathname=${encodeURIComponent(filePath)}&url=${encodeURIComponent(file.url)}`);
+            // Use pathname parameter instead of url parameter for clarity and consistency
+            const contentResponse = await fetch(`/api/files/content?pathname=${encodeURIComponent(filePath)}`);
             
             if (!contentResponse.ok) {
               console.error(`Failed to fetch content: ${contentResponse.status} ${contentResponse.statusText}`);
@@ -288,23 +299,41 @@ export function DocumentBuilder() {
             <span className="ml-1">Manage Field-Prompt Templates</span>
           </Link>
           {availableConfigs.length > 0 && (
-            <div className="flex items-center">
-              <label htmlFor="configSelect" className="mr-2 text-sm font-medium text-gray-700">
-                Load Template:
-              </label>
-              <select
-                id="configSelect"
-                value={selectedConfig}
-                onChange={(e) => handleLoadConfig(e.target.value)}
-                className="form-select rounded-md border-gray-300 shadow-sm focus:border-purple focus:ring focus:ring-purple focus:ring-opacity-50"
-              >
-                <option value="">Select a template</option>
-                {availableConfigs.map(config => (
-                  <option key={config.id} value={config.id}>
-                    {config.name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center">
+                <label htmlFor="configSelect" className="mr-2 text-sm font-medium text-gray-700">
+                  Load Template:
+                </label>
+                <select
+                  id="configSelect"
+                  value={selectedConfig}
+                  onChange={(e) => handleLoadConfig(e.target.value)}
+                  className="form-select rounded-md border-gray-300 shadow-sm focus:border-purple focus:ring focus:ring-purple focus:ring-opacity-50"
+                >
+                  <option value="">Select a template</option>
+                  <optgroup label="Personal Templates">
+                    {availableConfigs
+                      .filter(config => !config.isShared)
+                      .map(config => (
+                        <option key={config.id} value={config.id}>
+                          {config.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Shared Templates">
+                    {availableConfigs
+                      .filter(config => config.isShared)
+                      .map(config => (
+                        <option key={config.id} value={config.id}>
+                          {config.name} {config.userEmail ? `(by ${config.userEmail})` : ''}
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Both personal and organization-wide shared templates are available.
+              </p>
             </div>
           )}
         </div>
