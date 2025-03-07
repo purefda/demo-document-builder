@@ -11,13 +11,21 @@ This document provides an overview of the Document Information Extractor and Bui
 │   ├── files/            # Files management feature
 │   ├── field-prompt/     # Field-Prompt Manager feature
 │   ├── chat-with-docs/   # Chat with Docs feature
+│   ├── submission-checklist/       # Submission Checklist feature
+│   ├── submission-checklist-config/ # Submission Checklist Config Manager
+│   ├── compliance-checklist/       # Compliance Checklist feature
+│   ├── compliance-checklist-config/ # Compliance Checklist Config Manager
 │   └── api/              # API routes including auth, chat, and query endpoints
 ├── components/           # Reusable React components
 │   ├── ui/               # Shared UI components
 │   ├── document-builder/ # Document Builder specific components
 │   ├── files/            # Files management components
 │   ├── field-prompt/     # Field-Prompt Manager components
-│   └── chat/             # Chat with Docs components
+│   ├── chat/             # Chat with Docs components
+│   ├── submission-checklist.tsx    # Submission Checklist component
+│   ├── submission-checklist-config.tsx # Submission Checklist Config Manager component
+│   ├── compliance-checklist.tsx    # Compliance Checklist component
+│   ├── compliance-checklist-config.tsx # Compliance Checklist Config Manager component
 ├── utils/                # Utility functions and helpers
 ├── ai/                   # AI-related functionality and query processing
 ├── public/               # Static assets
@@ -52,6 +60,18 @@ This document provides an overview of the Document Information Extractor and Bui
 - Chat history management
 - Integration with the query API
 
+### `/app/submission-checklist` and `/app/submission-checklist-config`
+- Submission checklist interface for document requirement verification
+- Configuration management for submission requirements
+- Document association with checklist items
+- AI-powered assessment of document compliance
+
+### `/app/compliance-checklist` and `/app/compliance-checklist-config`
+- Compliance checklist interface for regulatory compliance assessment
+- Implements the GSPR Compliance Matrix for medical devices
+- AI-powered compliance evaluation of selected documents
+- Configuration management for compliance requirements and standards
+
 ### `/app/api`
 - `/api/auth` - Authentication endpoints
 - `/api/chat` - Chat processing endpoints
@@ -61,6 +81,9 @@ This document provides an overview of the Document Information Extractor and Bui
   - `/api/field-prompts/shared` - Shared field-prompt configuration endpoints
 - `/api/files` - File management endpoints
   - `/api/files/content` - Document content retrieval with improved error handling
+- `/api/submission-checklists` - Submission checklist configuration management
+- `/api/compliance-checklists` - Compliance checklist configuration management
+  - Supports storing configurations in Vercel Blob Storage
 
 ## Key Component Directories
 
@@ -69,29 +92,44 @@ This document provides an overview of the Document Information Extractor and Bui
 - Styled according to design specifications
 - Implements the left navigation sidebar
 
-### `/components/document-builder`
+### `/components/document-builder` and `/components/document-builder.tsx`
 - Components specific to the Document Builder feature
 - Field-prompt extraction interface components
 - Document selection and display components
 - Extraction result display and editing components
 - Integration with both personal and shared field-prompt configurations
 
-### `/components/files`
+### `/components/files` and `/components/files.tsx`
 - File upload components
 - File listing and management components
 - File metadata editing components
 
-### `/components/field-prompt`
+### `/components/field-prompt` and `/components/field-prompt-manager.tsx`
 - Field-prompt editor components
 - Configuration save/load functionality
 - JSON editor integration
 - Shared configuration management interface
 
-### `/components/chat`
+### `/components/chat` and `/components/chat.tsx`
 - Chat interface components
 - Document selection components
 - Message display and input components
 - Robust document content fetching
+
+### `/components/submission-checklist.tsx` and `/components/submission-checklist-config.tsx`
+- Submission checklist item display and management
+- Document association interface
+- Assessment results display
+- Configuration editor with form and JSON views
+
+### `/components/compliance-checklist.tsx` and `/components/compliance-checklist-config.tsx`
+- GSPR Compliance Matrix implementation
+- Document selection for compliance assessment
+- Robust API response parsing with multi-tiered fallback strategies
+- Detailed display of compliance status, locations, and explanations
+- Configuration management for compliance requirements
+- Support for both form-based and JSON editing of configurations
+- Sharing capabilities for compliance matrices
 
 ## Key Utilities
 
@@ -113,6 +151,20 @@ This document provides an overview of the Document Information Extractor and Bui
 ### PDF Handling (`utils/pdf.ts`)
 - Utilities for extracting text content from PDF files
 - Used by the content API for document processing
+
+### Submission Checklist Service (`utils/submission-checklist-service.ts`)
+- Manages submission checklist configurations
+- Handles document associations and assessment results
+
+### Compliance Checklist Service (`utils/compliance-checklist-service.ts`)
+- Manages compliance checklist configurations in Vercel Blob Storage
+- Supports personal and shared compliance matrices
+- Provides functions for:
+  - Saving configurations with sharing options
+  - Listing available configurations (personal and shared)
+  - Retrieving specific configurations
+  - Updating existing configurations
+  - Deleting configurations
 
 ## Database Schema
 
@@ -152,42 +204,36 @@ The database schema includes:
    - `documentIds` (array of Document.id)
    - `author` (references User.email)
 
-## Key Integrations
+6. `ComplianceChecklist` table:
+   - `id` (primary key)
+   - `name`
+   - `config` (JSON containing checklist items)
+   - `createdAt`
+   - `updatedAt`
+   - `createdBy` (references User.email)
+   - `isShared` (boolean flag for shared configurations)
+   - `version` (version tracking for audit purposes)
 
-### OpenRouter Integration
-- Configuration in `utils/openrouter.ts`
-- Default model: google/gemini-2.0-flash-001:online
-- Used for document information extraction and chat functionality
+## Key Integration Points
 
-### Supabase Integration
-- Configuration in `utils/supabase.ts`
-- Used for database and storage
-- Uses environment variables:
-  - `SUPABASE_URL`
-  - `SUPABASE_ANON_KEY`
-  - `SUPABASE_DB_URL`
+### LLM Integration for Compliance Assessment
+- Uses OpenRouter API to access Gemini models
+- Implements robust parsing strategies for various response formats:
+  - Direct JSON parsing
+  - Regex-based JSON extraction
+  - Text-based compliance determination
+- Fallback mechanisms ensure users always receive meaningful results
 
-### Vercel Blob Storage Integration
-- Used for storing files and field-prompt configurations
-- Organized structure:
-  - User-specific files: `{userEmail}/{fileName}`
-  - Personal field-prompt configs: `field-prompts/{userEmail}/{configId}.json`
-  - Shared field-prompt configs: `field-prompts/shared/{configId}.json`
+### Vercel Blob Storage for Configuration Management
+- Stores compliance configurations in organized paths:
+  - Personal configurations: `compliance-checklists/{userEmail}/{configId}.json`
+  - Shared configurations: `compliance-checklists/shared/{configId}.json`
+- Supports configuration versioning and sharing
 
-### Vercel Analytics Integration
-- Added for usage tracking and performance monitoring
-- Integrated into the root layout component (`app/layout.tsx`)
-- Provides insights into user behavior and application performance
-- No additional configuration required beyond package installation
-
-### Database ORM
-- Uses Drizzle ORM for database operations
-- Configuration in `drizzle.config.ts`
-- Schema defined in `schema.ts`
-
-### Authentication
-- Uses NextAuth.js for authentication
-- Configuration integrated with Supabase
+### API Design
+- Modular API endpoints for each feature
+- Consistent authentication and error handling
+- Support for personal and shared resources
 
 ## Design Implementation
 

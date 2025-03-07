@@ -99,6 +99,30 @@ export function LeftNav() {
               Submission Checklist Config
             </Link>
           </li>
+          <li>
+            <Link 
+              href="/compliance-checklist" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/compliance-checklist') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Compliance Checklist
+            </Link>
+          </li>
+          <li>
+            <Link 
+              href="/compliance-checklist-config" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/compliance-checklist-config') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Compliance Checklist Config
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

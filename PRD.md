@@ -22,7 +22,9 @@ Font:
     - Field-Prompt Manager
     - Chat with Docs
     - Submission Checklist
+    - Submission Checklist Config Manager
     - Compliance Checklist
+    - Compliance Checklist Config Manager
 
 # API
 
@@ -87,3 +89,34 @@ INDICATION_FOR_USE = "Write the indication for use for this device"
 - We will use the api/query api
 - We will send the text in the docs and the last 10 chat history to the API to get the response
 - Use model google/gemini-2.0-flash-001
+
+# Submission Checklist
+- Provides users a clear list of required documents for submission (e.g., UAF, IVF, safety manuals, introduction documents).
+- Allows associating one or multiple uploaded documents to each checklist item.
+- For each row, there is the checklist name, and the requirement
+- Run LLM model using the selected documents againt the model, and output status indicators (e.g., compliant, non-compliant, needs review) for easy tracking and user feedback, also a comments section why the model think this way
+- Integration with Files Page for seamless document management.
+
+# Submission Checklist Config Manager
+- Interface for administrators or advanced users to create, edit, and manage submission checklist configurations.
+- Supports customization of required documents and checklist criteria per project or compliance need.
+- Enables saving, loading, and deleting checklist configurations stored as JSON.
+- Allows sharing configurations across multiple users or keeping them personal/private.
+- Offers JSON-based direct editing alongside a more user-friendly, structured editor.
+
+# Compliance Checklist
+- Implements the GSPR Compliance Matrix, allowing systematic cross-referencing of multiple checklist items against numerous uploaded documents.
+- User are select multile documents at the top, and the check will run agains all the docuemnts
+- Use api/query to check whether it meets or notrelevant information across all selected documents.
+- Provides detailed compliance statuses (fully compliant, partially compliant, non-compliant) based on the cross-document analysis.
+- Highlights specific documents contributing to compliance or indicating missing elements.
+- Features comprehensive reporting to assist users in pinpointing gaps and necessary actions.
+- The config include fields: Serial, General Requirement, Applied Standards (like EN ISO 13485:2016/A11:2021), apply documents (SO 13485 Certificate Quality Manual, Design & Development File/Design History File Medical Device File/Device Master Record Risk Management Report Performance Evaluation Report) and Compliance Criteria. The output from the model will be Comply (Y/N/NA), and comments.
+
+# Compliance Checklist Config Manager
+- Allows configuration and management of compliance checklists (e.g., IVDR/GSPR) with granular control over checklist items.
+- Supports bulk editing, importing, and exporting checklist configurations.
+- Includes version control capabilities for audit trail purposes and historical compliance tracking.
+- Offers both visual and JSON editing interfaces for efficient management and advanced customization.
+- Facilitates shared checklist configurations for consistent compliance assessments across teams and projects.
+

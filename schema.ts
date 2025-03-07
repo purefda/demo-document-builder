@@ -7,6 +7,7 @@ import {
   real,
   timestamp,
   json,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("User", {
@@ -30,8 +31,23 @@ export const chunk = pgTable("Chunk", {
   embedding: real("embedding").array().notNull(),
 });
 
+export const complianceChecklists = pgTable("ComplianceChecklist", {
+  id: text("id").primaryKey().notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  config: json("config").notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
+  createdBy: varchar("createdBy", { length: 64 })
+    .notNull()
+    .references(() => user.email),
+  isShared: boolean("isShared").default(false).notNull(),
+  version: text("version").default("1.0"),
+});
+
 export type Chat = Omit<InferSelectModel<typeof chat>, "messages"> & {
   messages: Array<Message>;
 };
 
 export type Chunk = InferSelectModel<typeof chunk>;
+
+export type ComplianceChecklist = InferSelectModel<typeof complianceChecklists>;
