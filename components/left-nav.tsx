@@ -75,6 +75,30 @@ export function LeftNav() {
               Chat with Docs
             </Link>
           </li>
+          <li>
+            <Link 
+              href="/submission-checklist" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/submission-checklist') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Submission Checklist
+            </Link>
+          </li>
+          <li>
+            <Link 
+              href="/submission-checklist-config" 
+              className={`block px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/submission-checklist-config') 
+                  ? 'bg-purple text-white' 
+                  : 'text-gray-700 hover:bg-light-white'
+              }`}
+            >
+              Submission Checklist Config
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>

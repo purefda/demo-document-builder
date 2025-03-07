@@ -17,10 +17,12 @@ Font:
 - There is no header in the page
 - There is a left nav in the page, always displayed to people
 - There are these functions
-    - Document Builder
     - Files Page
+    - Document Builder
     - Field-Prompt Manager
     - Chat with Docs
+    - Submission Checklist
+    - Compliance Checklist
 
 # API
 

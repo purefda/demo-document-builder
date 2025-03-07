@@ -1,5 +1,6 @@
 import { LeftNav } from "@/components/left-nav";
 import { Navbar } from "@/components/navbar";
+import { SessionProvider } from "@/components/session-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { Metadata } from "next";
 import { Toaster } from "sonner";
@@ -22,13 +23,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-light-white">
-        <Toaster position="top-center" />
-        <LeftNav />
-        <Navbar />
-        <main className="ml-56 pt-16 min-h-screen">
-          {children}
-        </main>
-        <Analytics />
+        <SessionProvider>
+          <Toaster position="top-center" />
+          <LeftNav />
+          <Navbar />
+          <main className="ml-56 pt-16 min-h-screen">
+            {children}
+          </main>
+          <Analytics />
+        </SessionProvider>
       </body>
     </html>
   );
