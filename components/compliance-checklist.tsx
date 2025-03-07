@@ -135,13 +135,13 @@ export default function ComplianceChecklist() {
             
             Use only the document content provided to make your assessment.
             
-            You must categorize your assessment as one of these: "Y" for compliant, "N" for non-compliant, or "NA" for not applicable.
+            You must categorize your assessment as one of these: &quot;Y&quot; for compliant, &quot;N&quot; for non-compliant, or &quot;NA&quot; for not applicable.
             
             Your response MUST be in JSON format with the following structure:
             {
-              "complianceStatus": "Y", "N", or "NA",
-              "location": "Specific section(s) or page(s) that support compliance (if applicable)",
-              "comments": "Detailed explanation of your assessment (100-200 words)"
+              &quot;complianceStatus&quot;: &quot;Y&quot;, &quot;N&quot;, or &quot;NA&quot;,
+              &quot;location&quot;: &quot;Specific section(s) or page(s) that support compliance (if applicable)&quot;,
+              &quot;comments&quot;: &quot;Detailed explanation of your assessment (100-200 words)&quot;
             }
             
             Return only valid JSON - no markdown formatting or other text.
@@ -150,7 +150,7 @@ export default function ComplianceChecklist() {
           // Prepare user prompt
           const userPrompt = `
             I need to assess compliance for requirement #${item.serial}:
-            "${item.requirement}"
+            \`${item.requirement}\`
             
             Based on the documents: ${selectedDocs.map(d => d.pathname).join(', ')}
             
@@ -158,9 +158,9 @@ export default function ComplianceChecklist() {
             For this assessment, I need:
             
             1. A compliance status:
-               - Use "Y" if the documents show clear compliance
-               - Use "N" if the documents indicate non-compliance
-               - Use "NA" if compliance cannot be determined from these documents
+               - Use &quot;Y&quot; if the documents show clear compliance
+               - Use &quot;N&quot; if the documents indicate non-compliance
+               - Use &quot;NA&quot; if compliance cannot be determined from these documents
                
             2. Specific locations in the documents that support this assessment (if any)
             
@@ -525,7 +525,7 @@ export default function ComplianceChecklist() {
       {selectedConfig && selectedDocuments.length > 0 && !loading && checklistResults.length === 0 && (
         <div className="p-6 mt-6 text-center bg-[#f6f8fd] rounded-lg">
           <p className="text-gray-600">
-            Click "Run Compliance Assessment" to evaluate the selected documents against the chosen checklist.
+            Click &quot;Run Compliance Assessment&quot; to evaluate the selected documents against the chosen checklist.
           </p>
         </div>
       )}
