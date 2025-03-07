@@ -478,7 +478,7 @@ export function SubmissionChecklistConfig() {
                     ))}
                     
                     {checklistItems.length === 0 && (
-                      <p className="text-sm text-gray-500 italic">No items in this checklist. Click "Add Item" to add your first item.</p>
+                      <p className="text-sm text-gray-500 italic">No items in this checklist. Click &quot;Add Item&quot; to add your first item.</p>
                     )}
                   </div>
                 </div>
